@@ -14,10 +14,10 @@ app.use(function(req, res, next) {
 app.get('/', (req, res) => res.send('Hello World!'));
 
 io.on('connection', socket => {
-    console.log('a user connected');
     socket.on('joinGame', (gameId, username) => {
         handleUserJoined(socket, gameId, username);
     });
+    socket.on('startGame', startGame);
 });
 
 function handleUserJoined(socket, gameId, username) {
@@ -30,9 +30,14 @@ function handleUserJoined(socket, gameId, username) {
         });
     });
     socket.join(gameId, () => {
-        console.log(username +' joined');
+        console.log(username +' joined game: ' + gameId);
         socket.to(gameId).emit('userJoined', username);
     });
+}
+
+function startGame(gameId) {
+    console.log('game started ' + gameId);
+    io.in(gameId).emit('startGame');
 }
 
 server.listen(PORT, () => console.log(`Example app listening at http://localhost:${PORT}`));
