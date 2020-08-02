@@ -10,7 +10,6 @@ app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Credentials", true);
     next();
 });
-
 app.get('/', (req, res) => res.send('Hello World!'));
 
 io.on('connection', socket => {
@@ -18,10 +17,14 @@ io.on('connection', socket => {
         handleUserJoined(socket, gameId, username);
     });
     socket.on('startGame', startGame);
+    socket.on('updateScore', (score, gameId) => {
+        updatePlayerScore(socket, score, gameId);
+    });
 });
 
 function handleUserJoined(socket, gameId, username) {
     socket.username = username;
+    // Send signal to joing socket of users who are already in the lobby
     io.in(gameId).clients((error, clients) => {
         console.log(clients);
         let sockets = io.sockets.sockets;
@@ -29,6 +32,8 @@ function handleUserJoined(socket, gameId, username) {
             socket.emit('userJoined', sockets[client].username);
         });
     });
+
+    // Finally allow the socket to join the game
     socket.join(gameId, () => {
         console.log(username +' joined game: ' + gameId);
         socket.to(gameId).emit('userJoined', username);
@@ -38,6 +43,11 @@ function handleUserJoined(socket, gameId, username) {
 function startGame(gameId) {
     console.log('game started ' + gameId);
     io.in(gameId).emit('startGame');
+}
+
+function updatePlayerScore(socket, score, gameId) {
+    console.log(score, gameId);
+    io.in(gameId).emit('playerScoreUpdated', socket.username, score);
 }
 
 server.listen(PORT, () => console.log(`Example app listening at http://localhost:${PORT}`));
